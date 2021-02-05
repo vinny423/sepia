@@ -1,22 +1,31 @@
 class Exercice{
   InstructionHandler ih;
+  Calculus calc;
   
   float speedup = 1;
   
-  float timeSinceLastAlt, timeSinceLastTurn;
-  float altInterval, turnInterval;
+  float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc;
+  float altInterval, turnInterval, calcInterval;
   
   float defaultAltInterval = 10000/speedup;
   float defaultTurnInterval = 20000/speedup;
   float defaultInterval = 5000/speedup;
+  
+  float defaultCalcInterval = 20000/speedup;
+  float defaultResultInterval = 5000/speedup;
+  float calcDelayMin = 25000/speedup;
+  float calcDelayMax = 50000/speedup;
+  boolean calcActive = false;
+  boolean resultActive = false;
   
   float startAltitude = 3000;
   float startBearing = 0;
   
   float timeMargin = 0.65;
   
-  String currentInstruction;
-  String previousInstruction;
+  String currentInstruction, previousInstruction, currentCalculation;
+  
+  color calculationColor = color(255,0,0);
   
   color textColor = color(0);
   int textSize = 40;
@@ -25,14 +34,38 @@ class Exercice{
   
   Exercice(float startAltitude, float startBearing){
     ih = new InstructionHandler(startAltitude, startBearing);
+    calc = new Calculus();
+    
     this.startAltitude = startAltitude;
     this.startBearing = startBearing;
     currentInstruction = "APPUYER SUR ENTREE POUR COMMENCER";
+    currentCalculation = "";
     started = false;
   }
   
   void run(){
     if(started){
+      
+      //Calculus
+      if(millis()-timeSinceLastCalc>calcInterval){
+        if(!calcActive){
+          currentCalculation = calc.getRandomCalculation();
+          calcActive = true;
+          calcInterval = defaultCalcInterval; 
+        }else if(!resultActive){
+          currentCalculation = currentCalculation+" = "+calc.getResult();
+          calcInterval = defaultResultInterval;
+          resultActive = true;
+        }else{
+          calcInterval = int(random(calcDelayMin,calcDelayMax));
+          calcActive = false;
+          resultActive = false;
+          currentCalculation = "";
+        }
+        timeSinceLastCalc = millis();
+      }
+      
+      //Altitude change
       if(millis()-timeSinceLastAlt>altInterval){
         if(!levelFlight){
           currentInstruction = ih.getRandomAltitudeInstruction();
@@ -57,6 +90,7 @@ class Exercice{
         println("");
       }
       
+      //Bearing change
       if(millis()-timeSinceLastTurn>turnInterval){
         currentInstruction = ih.getRandomTurnInstruction();
         timeSinceLastTurn = millis();
@@ -75,6 +109,7 @@ class Exercice{
       }
     }
     displayCurrentInstruction();
+    displayCurrentCalculation();
   }
   
   void displayCurrentInstruction(){
@@ -84,9 +119,17 @@ class Exercice{
     text(currentInstruction,width/2,height*0.1);
   }
   
+  void displayCurrentCalculation(){
+    fill(calculationColor);
+    textSize(textSize);
+    textAlign(CENTER,CENTER);
+    text(currentCalculation,width/2,height*0.18);
+  }
+  
   void start(){
-    altInterval = 0;//int(random(5,10))*1000;
-    turnInterval = int(random(25,30))*1000/speedup;
+    altInterval = 0;
+    turnInterval = int(random(25000,30000))/speedup;
+    calcInterval = int(random(calcDelayMin,calcDelayMax));
     started = true;
   }
 }
