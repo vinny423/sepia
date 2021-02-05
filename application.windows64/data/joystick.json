@@ -1,0 +1,13 @@
+{
+  "multiplierY": 1,
+  "throttle": "Top Gun Afterburner",
+  "toleranceX": 0.0560000017285347,
+  "toleranceY": 0.0453333742916584,
+  "axisY": "Y Axis",
+  "axisX": "X Axis",
+  "joystick": "Top Gun Afterburner",
+  "multiplierT": -1,
+  "axisT": "Slider",
+  "toleranceT": 0,
+  "multiplierX": 1
+}
