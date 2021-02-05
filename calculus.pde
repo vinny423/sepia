@@ -64,7 +64,7 @@ class Calculus{
     int div2 = divLow[int(random(divLow.length))];
     int div1 = int(random(divMin,divMax))*div2;
     
-    result = div1;
+    result = div1/2;
     
     return div1 +" ÷ "+div2;
   }
