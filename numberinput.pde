@@ -4,19 +4,11 @@ class NumberInput{
   float inputWidth, inputHeight;
   color backgroundColor, strokeColor, textColor;
   int maxSize = 5;
-<<<<<<< HEAD
-  int textSize = 40;
-  int borderSize = 5;
-  ArrayList<String> currentInput = new ArrayList<String>();
   
   int input = -1;
-=======
   int textSize = 30;
   int borderSize = 5;
   ArrayList<String> currentInput = new ArrayList<String>();
-  
-  int input;
->>>>>>> main
   
   NumberInput(float x, float y, float inputWidth, float inputHeight){
     this.x = x;
@@ -51,11 +43,9 @@ class NumberInput{
       temp+=num;
     }
     input =  Integer.parseInt(temp);
-<<<<<<< HEAD
     
-=======
     println("The input is "+input);
->>>>>>> main
+
     clearInput();
   }
   
@@ -63,13 +53,10 @@ class NumberInput{
     return input;
   }
   
-<<<<<<< HEAD
   void resetInput(){
     input = -1;
   }
   
-=======
->>>>>>> main
   void addNumber(String number){
     if(currentInput.size()<maxSize) currentInput.add(number);
   }
