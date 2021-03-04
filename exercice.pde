@@ -1,8 +1,9 @@
 class Exercice{
   InstructionHandler ih;
   Calculus calc;
+  NumberInput numberInput;
   
-  float speedup = 1;
+  float speedup = 2;
   
   float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc;
   float altInterval, turnInterval, calcInterval;
@@ -25,17 +26,27 @@ class Exercice{
   
   String currentInstruction, previousInstruction, currentCalculation;
   
-  color calculationColor = color(255,0,0);
-  
   color textColor = color(0);
   int textSize = 40;
   
   boolean levelFlight = true;
   
-  Exercice(float startAltitude, float startBearing){
+  String correct = "✓";
+  color correctColor = color(0,220,0);
+  
+  String incorrect = "X";
+  color incorrectColor = color(255,0,0);
+  
+  color defaultCalcColor = color(0,0,255);
+  
+  String answer;
+  color calculationColor = defaultCalcColor;
+  
+  Exercice(float startAltitude, float startBearing, NumberInput numberInput){
     ih = new InstructionHandler(startAltitude, startBearing);
     calc = new Calculus();
     
+    this.numberInput = numberInput;
     this.startAltitude = startAltitude;
     this.startBearing = startBearing;
     currentInstruction = "APPUYER SUR ENTREE POUR COMMENCER";
@@ -49,11 +60,20 @@ class Exercice{
       //Calculus
       if(millis()-timeSinceLastCalc>calcInterval){
         if(!calcActive){
+          calculationColor = defaultCalcColor;
           currentCalculation = calc.getRandomCalculation();
           calcActive = true;
           calcInterval = defaultCalcInterval; 
         }else if(!resultActive){
-          currentCalculation = currentCalculation+" = "+calc.getResult();
+          if(calc.getResult() == numberInput.getInput()){
+            answer = correct;
+            calculationColor = correctColor;
+          }else{
+            answer = incorrect;
+            calculationColor = incorrectColor;
+          }
+          
+          currentCalculation = currentCalculation+" = "+calc.getResult()+" "+answer;
           calcInterval = defaultResultInterval;
           resultActive = true;
         }else{
@@ -113,7 +133,7 @@ class Exercice{
   }
   
   void displayCurrentInstruction(){
-    fill(textColor);
+    fill(0);
     textSize(textSize);
     textAlign(CENTER,CENTER);
     text(currentInstruction,width/2,height*0.1);

@@ -58,7 +58,13 @@ void setup() {
   airspeed = new Airspeed(width*3/8, height*4/5);
 
   vario = new Vario(width*5/8, height*4/5);
+<<<<<<< Updated upstream
 
+=======
+  
+  numberInput = new NumberInput(width*9/10, height*4.5/7,450, 100);
+  
+>>>>>>> Stashed changes
   rotacteurOdd = new Rotactor(width/12, height*3/8, textOdd);
   rotacteurPair = new Rotactor(width/12, height*5/9, textPair);
   
@@ -68,14 +74,14 @@ void setup() {
   
   resetFlight();
   
-  exercice = new Exercice(altitude,bearing);
+  exercice = new Exercice(altitude,bearing, numberInput);
   
   rpmLocked = false;
   rollLocked = pitchLocked = speedLocked = true;
 }
 
 void draw() {
-  background(200);
+  background(220);
   
   if(joystickSet){
     
@@ -125,7 +131,7 @@ void displayInstruments(){
 void reset(){
   rollLocked = pitchLocked = speedLocked = true;
   resetFlight();
-  exercice = new Exercice(altitude,bearing);
+  exercice = new Exercice(altitude,bearing, numberInput);
   println("Exercice reset");
 }
 
