@@ -26,6 +26,7 @@ Compass compass;
 Altimeter altimeter;
 Airspeed airspeed;
 Vario vario;
+NumberInput numberInput;
 
 //Rotactors
 String[] textOdd= {"N", "3", "5", "7", "9"};
@@ -58,6 +59,7 @@ void setup() {
   airspeed = new Airspeed(width*3/8, height*4/5);
 
   vario = new Vario(width*5/8, height*4/5);
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 
 =======
@@ -65,6 +67,11 @@ void setup() {
   numberInput = new NumberInput(width*9/10, height*4.5/7,450, 100);
   
 >>>>>>> Stashed changes
+=======
+  
+  numberInput = new NumberInput(width*7/8, height*4/5,350, 75);
+  
+>>>>>>> main
   rotacteurOdd = new Rotactor(width/12, height*3/8, textOdd);
   rotacteurPair = new Rotactor(width/12, height*5/9, textPair);
   
@@ -99,6 +106,8 @@ void draw() {
     displayInstruments();
     
     joystickButton.display();
+    
+    numberInput.display();
     
     exercice.run();
     
@@ -143,9 +152,13 @@ void keyPressed() {
   if (key == 's') rotacteurPairSelection++;
   else if (key == 'q') rotacteurPairSelection--;
   
+  //Input
+  if (started && (Character.isDigit(key) || keyCode == 10 || keyCode == 8)) numberInput.handleInput();
+  
+  //Main logic
   if(key == 'r') reset();
   
-  if(key == ENTER){
+  if(key == ENTER && started == false){
     exercice.start();
     rpmLocked = pitchLocked = rollLocked = speedLocked = false;
   }
