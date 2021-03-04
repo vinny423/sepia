@@ -81,58 +81,59 @@ void resetFlight(){
 }
 
 void flight() {
+  if(paused) return;
   if(!rpmLocked){
     rpm = map(throttle, -1, 1, idleRpm, maxRpm);
     power = map(throttle, -1, 1, idlePower, maxPower);
   }
-  
+
   if(!rollLocked){
     bank += map(x, -1, 1, maxRollRate, -maxRollRate);
     if(bank<-bankDeadzone) bank -= bank*naturalBank;
     else if(bank>bankDeadzone) bank -= bank*naturalBank;
   }
-  
+
   if(!pitchLocked){
     pitch += map(y, -1, 1, -maxPitchRate, maxPitchRate);
     if(pitch<-pitchDeadzone) pitch -= pitch*naturalPitch;
     else if(pitch>pitchDeadzone) pitch -= pitch*naturalPitch;
   }
-  
+
   incidence = degrees((2*weight/(airDensity*sq(speed*0.5144)*wingArea)-b)*1/5.5);
   aoa = pitch-incidence;
-  
+
   tas = speed+altitude/200;
-  
+
   liftCoefficient = a*(pitch)+b;
   lift = 0.5*airDensity*sq(tas*0.5144)*liftCoefficient*wingArea; //N
 
   dragCoefficient = c*sq(liftCoefficient)+d;
   drag = 0.5*airDensity*sq(tas*0.5144)*dragCoefficient*wingArea; //N
-  
+
   //thrust = 4.392399*pow(10,-8)*rpm*(pow(propDiameter,3.5)/sqrt(propPitch))*(4.23333*pow(10,-4)*rpm*propPitch-speed*0.5144); //N Dynamic thrust
   thrust = propellerEfficiency*power*745.6998/(speed*0.5144);
-  
+
   acceleration = ((thrust-drag)*cos(radians(pitch))-lift*asin(radians(pitch)))/mass;//m/s
-  
+
   /*float accelerationX = ((thrust-drag)*cos(radians(pitch))-lift*sin(radians(pitch)))/mass;
   float accelerationY = ((thrust-drag)*sin(radians(pitch))+lift*cos(radians(pitch))-weight)/mass;*/
-  
+
   if(!speedLocked){
     accelerationX = ((thrust-drag)*cos(radians(pitch))+lift*sin(radians(pitch)))/mass;
     accelerationY = ((thrust-drag)*sin(radians(pitch))-lift*cos(radians(pitch))-weight)/mass;
-    
+
     acceleration = (accelerationX*acos(radians(pitch)) + accelerationY*asin(radians(pitch)));
-    
+
     speed += acceleration/(fps*0.5144);
   }
-  
+
   if(pitch<-pitchDeadzone || pitch>pitchDeadzone) fpm = sin(radians(pitch))*speed*101.269;
   else fpm = 0;
-  
+
   altitude += fpm/(60*fps);
-  
+
   if(bank<-bankDeadzone || bank>bankDeadzone) bearing += (1091*tan(radians(bank)))/(speed*fps);
-  
+
   if(debug) printData();
 }
 

@@ -4,12 +4,13 @@ import java.util.List;
 
 //General settings
 boolean debug = false;
+boolean started = false;
+boolean paused = false;
 int fps = 60;
 boolean joystickSet = false;
 boolean joystickPreloaded = false;
 boolean leftMouseClicked = false;
 boolean mouseLocked = false;
-boolean started = false;
 boolean rpmLocked, pitchLocked, rollLocked, speedLocked;
 
 //Instruments positions
@@ -44,64 +45,69 @@ void settings() {
 void setup() {
   frameRate(fps);
   control = ControlIO.getInstance(this);
-  
+
   if(!joystickSet) setupJoystick();
-  
+
   //Instruments
   altimeter = new Altimeter(width*3/4, height/2);
 
-  horizon = new Horizon(width/4, height/2);
+  horizon = new Horizon(width*2/8, height/2);
 
-  compass = new Compass(width/2, height/2);
+  compass = new Compass(width*4/8, height/2);
 
   tacho = new Tachometer(width*1/8, height*4/5);
 
   airspeed = new Airspeed(width*3/8, height*4/5);
 
   vario = new Vario(width*5/8, height*4/5);
-  
-  numberInput = new NumberInput(width*9/10, height*4.5/7,450, 100);
 
-  
+  numberInput = new NumberInput(width*0.9, height*0.75,450, 100);
+
   rotacteurOdd = new Rotactor(width/12, height*3/8, textOdd);
   rotacteurPair = new Rotactor(width/12, height*5/9, textPair);
-  
+
   joystickButton = new Button("j",width-75,height-75,75,75);
   joystickButton.setColor(color(#083471));
   joystickButton.setTextColor(color(255));
-  
+
   resetFlight();
-  
+
   exercice = new Exercice(altitude,bearing, numberInput);
-  
+
   rpmLocked = false;
   rollLocked = pitchLocked = speedLocked = true;
 }
 
 void draw() {
   background(220);
-  
+
   if(joystickSet){
-    
+
     getUserInput();
     flight();
-  
+
     fill(50);
     stroke(0);
     strokeWeight(10);
     rectMode(CORNER);
     rect(0, height, width, -height*0.75, 180, 180, 0, 0);
-  
+
     validateValues();
-  
+
     displayInstruments();
-    
+
     joystickButton.display();
-    
+
     numberInput.display();
-    
+
     exercice.run();
-    
+
+    if(paused){
+      fill(0);
+      textSize(50);
+      text("PAUSE", width*0.93, height*0.05);
+    }
+
     if(joystickButton.clicked){
       joystickSet = false;
     }
@@ -113,7 +119,7 @@ void draw() {
 
 void displayInstruments(){
   tacho.display(rpm/100);
-  
+
   altimeter.display(altitude);
 
   compass.display(bearing);
@@ -132,23 +138,39 @@ void reset(){
   rollLocked = pitchLocked = speedLocked = true;
   resetFlight();
   exercice = new Exercice(altitude,bearing, numberInput);
+  paused = false;
   println("Exercice reset");
+}
+
+void pause(){
+  paused = true;
+  rollLocked = pitchLocked = speedLocked = true;
+  exercice.pause();
+}
+
+void unpause(){
+  paused = false;
+  rollLocked = pitchLocked = speedLocked = false;
+  exercice.unpause();
 }
 
 void keyPressed() {
   //Rotactors
-  if (key == 'z') rotacteurOddSelection++;
+  if (key == 'z' && !paused) rotacteurOddSelection++;
   else if (key == 'a') rotacteurOddSelection--;
-    
-  if (key == 's') rotacteurPairSelection++;
+
+  if (key == 's' && !paused) rotacteurPairSelection++;
   else if (key == 'q') rotacteurPairSelection--;
-  
+
   //Input
-  if (started && (Character.isDigit(key) || keyCode == 10 || keyCode == 8)) numberInput.handleInput();
-  
+  if (started && !paused && (Character.isDigit(key) || keyCode == 10 || keyCode == 8)) numberInput.handleInput();
+
   //Main logic
   if(key == 'r') reset();
-  
+
+  if(key == 'p' && started) if(!paused) pause();
+  else unpause();
+
   if(key == ENTER && started == false){
     exercice.start();
     rpmLocked = pitchLocked = rollLocked = speedLocked = false;
@@ -161,10 +183,6 @@ void validateValues() {
   if (rotacteurPairSelection > textPair.length-1) rotacteurPairSelection = textPair.length-1;
   if (rotacteurPairSelection < 0) rotacteurPairSelection = 0;
 }
-
-/*void mouseClicked(){
-  if(mouseButton == LEFT) leftMouseClicked = true;
-}*/
 
 void mousePressed(){
   if(mouseButton == LEFT){

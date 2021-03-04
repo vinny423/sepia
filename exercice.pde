@@ -2,50 +2,50 @@ class Exercice{
   InstructionHandler ih;
   Calculus calc;
   NumberInput numberInput;
-  
-  float speedup = 2;
-  
-  float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc;
+
+  float speedup = 1;
+
+  float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc, timeSincePaused;
   float altInterval, turnInterval, calcInterval;
-  
+
   float defaultAltInterval = 10000/speedup;
   float defaultTurnInterval = 20000/speedup;
   float defaultInterval = 5000/speedup;
-  
+
   float defaultCalcInterval = 20000/speedup;
   float defaultResultInterval = 5000/speedup;
   float calcDelayMin = 25000/speedup;
   float calcDelayMax = 50000/speedup;
   boolean calcActive = false;
   boolean resultActive = false;
-  
+
   float startAltitude = 3000;
   float startBearing = 0;
-  
+
   float timeMargin = 0.65;
-  
+
   String currentInstruction, previousInstruction, currentCalculation;
-  
+
   color textColor = color(0);
   int textSize = 40;
-  
+
   boolean levelFlight = true;
-  
+
   String correct = "✓";
   color correctColor = color(0,220,0);
-  
+
   String incorrect = "X";
   color incorrectColor = color(255,0,0);
-  
+
   color defaultCalcColor = color(0,0,255);
-  
+
   String answer;
   color calculationColor = defaultCalcColor;
-  
+
   Exercice(float startAltitude, float startBearing, NumberInput numberInput){
     ih = new InstructionHandler(startAltitude, startBearing);
     calc = new Calculus();
-    
+
     this.numberInput = numberInput;
     this.startAltitude = startAltitude;
     this.startBearing = startBearing;
@@ -53,17 +53,27 @@ class Exercice{
     currentCalculation = "";
     started = false;
   }
-  
+
+  void pause(){
+    timeSincePaused = millis();
+  }
+
+  void unpause(){
+    timeSinceLastCalc += millis() - timeSincePaused;
+    timeSinceLastAlt += millis() - timeSincePaused;
+    timeSinceLastTurn += millis() - timeSincePaused;
+  }
+
   void run(){
-    if(started){
-      
+    if(started && !paused){
+
       //Calculus
       if(millis()-timeSinceLastCalc>calcInterval){
         if(!calcActive){
           calculationColor = defaultCalcColor;
           currentCalculation = calc.getRandomCalculation();
           calcActive = true;
-          calcInterval = defaultCalcInterval; 
+          calcInterval = defaultCalcInterval;
         }else if(!resultActive){
           if(calc.getResult() == numberInput.getInput()){
             answer = correct;
@@ -72,7 +82,7 @@ class Exercice{
             answer = incorrect;
             calculationColor = incorrectColor;
           }
-          
+
           currentCalculation = currentCalculation+" = "+calc.getResult()+" "+answer;
           calcInterval = defaultResultInterval;
           resultActive = true;
@@ -84,7 +94,7 @@ class Exercice{
         }
         timeSinceLastCalc = millis();
       }
-      
+
       //Altitude change
       if(millis()-timeSinceLastAlt>altInterval){
         if(!levelFlight){
@@ -109,7 +119,7 @@ class Exercice{
         }
         println("");
       }
-      
+
       //Bearing change
       if(millis()-timeSinceLastTurn>turnInterval){
         currentInstruction = ih.getRandomTurnInstruction();
@@ -131,25 +141,26 @@ class Exercice{
     displayCurrentInstruction();
     displayCurrentCalculation();
   }
-  
+
   void displayCurrentInstruction(){
     fill(0);
     textSize(textSize);
     textAlign(CENTER,CENTER);
     text(currentInstruction,width/2,height*0.1);
   }
-  
+
   void displayCurrentCalculation(){
     fill(calculationColor);
     textSize(textSize);
     textAlign(CENTER,CENTER);
     text(currentCalculation,width/2,height*0.18);
   }
-  
+
   void start(){
     altInterval = 0;
     turnInterval = int(random(25000,30000))/speedup;
     calcInterval = int(random(calcDelayMin,calcDelayMax));
     started = true;
+    paused = false;
   }
 }
