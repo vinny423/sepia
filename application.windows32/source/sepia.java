@@ -533,6 +533,81 @@ class Button{
     else return false;
   }
 }
+class Calculus{
+  
+  int num1Min = 100;
+  int num1Max = 900;
+  int num2Min = 10;
+  int num2Max = 100;
+  
+  int multMin = 50;
+  int multMax = 200;
+  int multLow[] = {2,3,4};
+  
+  int divLow[] = {2,3};
+  
+  int divMin = 50;
+  int divMax = 300;
+  int result;
+  
+  Calculus(){
+    
+  }
+  
+  public String getRandomCalculation(){
+    String calculation;
+    
+    int rand = PApplet.parseInt(random(100));
+    
+    
+    if(rand<35) calculation = getAddition();
+    else if(rand<70) calculation = getSubstraction();
+    else if(rand<90) calculation = getMultiplication();
+    else calculation = getDivision();
+    
+    return calculation;
+  }
+  
+  public String getAddition(){
+    int num1 = PApplet.parseInt(random(num1Min,num1Max));
+    int num2 = PApplet.parseInt(random(num2Min,num2Max));
+    
+    result = num1 + num2;
+    
+    return num1 +" + "+num2;
+  }
+  
+  public String getSubstraction(){
+    int num1 = PApplet.parseInt(random(num1Min,num1Max));
+    int num2 = PApplet.parseInt(random(num2Min,num2Max));
+    
+    result = num1 - num2;
+    
+    return num1 +" - "+num2;
+  }
+  
+  public String getMultiplication(){
+    int mult1 = PApplet.parseInt(random(multMin,multMax));
+    int mult2 = multLow[PApplet.parseInt(random(multLow.length))];
+    
+    result = mult1 * mult2;
+    
+    return mult1 +" x "+mult2;
+  }
+  
+  public String getDivision(){
+    int div2 = divLow[PApplet.parseInt(random(divLow.length))];
+    int div1 = PApplet.parseInt(random(divMin,divMax))*div2;
+    
+    result = div1/2;
+    
+    return div1 +" ÷ "+div2;
+  }
+  
+  public int getResult(){
+    return result;
+  }
+}
 class Checkbox{
   float x,y;
   float size;
@@ -778,23 +853,32 @@ class DropdownList{
 }
 class Exercice{
   InstructionHandler ih;
+  Calculus calc;
   
   float speedup = 1;
   
-  float timeSinceLastAlt, timeSinceLastTurn;
-  float altInterval, turnInterval;
+  float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc;
+  float altInterval, turnInterval, calcInterval;
   
   float defaultAltInterval = 10000/speedup;
   float defaultTurnInterval = 20000/speedup;
   float defaultInterval = 5000/speedup;
+  
+  float defaultCalcInterval = 20000/speedup;
+  float defaultResultInterval = 5000/speedup;
+  float calcDelayMin = 25000/speedup;
+  float calcDelayMax = 50000/speedup;
+  boolean calcActive = false;
+  boolean resultActive = false;
   
   float startAltitude = 3000;
   float startBearing = 0;
   
   float timeMargin = 0.65f;
   
-  String currentInstruction;
-  String previousInstruction;
+  String currentInstruction, previousInstruction, currentCalculation;
+  
+  int calculationColor = color(255,0,0);
   
   int textColor = color(0);
   int textSize = 40;
@@ -803,14 +887,38 @@ class Exercice{
   
   Exercice(float startAltitude, float startBearing){
     ih = new InstructionHandler(startAltitude, startBearing);
+    calc = new Calculus();
+    
     this.startAltitude = startAltitude;
     this.startBearing = startBearing;
     currentInstruction = "APPUYER SUR ENTREE POUR COMMENCER";
+    currentCalculation = "";
     started = false;
   }
   
   public void run(){
     if(started){
+      
+      //Calculus
+      if(millis()-timeSinceLastCalc>calcInterval){
+        if(!calcActive){
+          currentCalculation = calc.getRandomCalculation();
+          calcActive = true;
+          calcInterval = defaultCalcInterval; 
+        }else if(!resultActive){
+          currentCalculation = currentCalculation+" = "+calc.getResult();
+          calcInterval = defaultResultInterval;
+          resultActive = true;
+        }else{
+          calcInterval = PApplet.parseInt(random(calcDelayMin,calcDelayMax));
+          calcActive = false;
+          resultActive = false;
+          currentCalculation = "";
+        }
+        timeSinceLastCalc = millis();
+      }
+      
+      //Altitude change
       if(millis()-timeSinceLastAlt>altInterval){
         if(!levelFlight){
           currentInstruction = ih.getRandomAltitudeInstruction();
@@ -835,6 +943,7 @@ class Exercice{
         println("");
       }
       
+      //Bearing change
       if(millis()-timeSinceLastTurn>turnInterval){
         currentInstruction = ih.getRandomTurnInstruction();
         timeSinceLastTurn = millis();
@@ -853,6 +962,7 @@ class Exercice{
       }
     }
     displayCurrentInstruction();
+    displayCurrentCalculation();
   }
   
   public void displayCurrentInstruction(){
@@ -862,9 +972,17 @@ class Exercice{
     text(currentInstruction,width/2,height*0.1f);
   }
   
+  public void displayCurrentCalculation(){
+    fill(calculationColor);
+    textSize(textSize);
+    textAlign(CENTER,CENTER);
+    text(currentCalculation,width/2,height*0.18f);
+  }
+  
   public void start(){
-    altInterval = 0;//int(random(5,10))*1000;
-    turnInterval = PApplet.parseInt(random(25,30))*1000/speedup;
+    altInterval = 0;
+    turnInterval = PApplet.parseInt(random(25000,30000))/speedup;
+    calcInterval = PApplet.parseInt(random(calcDelayMin,calcDelayMax));
     started = true;
   }
 }
