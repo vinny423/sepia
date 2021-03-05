@@ -1,17 +1,22 @@
 class Exercice{
   InstructionHandler ih;
+  SerieHandler sh;
   Calculus calc;
   NumberInput numberInput;
 
-  float speedup = 1;
+  float speedup = 3;
 
-  float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc, timeSincePaused;
-  float altInterval, turnInterval, calcInterval;
+  float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc, timeSinceLastSerie, timeSincePaused;
+  float altInterval, turnInterval, calcInterval, serieInterval;
 
+  //Flying
   float defaultAltInterval = 10000/speedup;
   float defaultTurnInterval = 20000/speedup;
   float defaultInterval = 5000/speedup;
+  float turnDelayMin = 25000/speedup;
+  float turnDelayMax = 30000/speedup;
 
+  //Calculus
   float defaultCalcInterval = 20000/speedup;
   float defaultResultInterval = 5000/speedup;
   float calcDelayMin = 25000/speedup;
@@ -19,12 +24,21 @@ class Exercice{
   boolean calcActive = false;
   boolean resultActive = false;
 
+  //SerieHandler
+  float defaultSerieInterval = 15000/speedup;
+  float serieDelayMin = 25000/speedup;
+  float serieDelayMax = 40000/speedup;
+
+  boolean serieActive = false;
+  boolean serieResultActive = false;
+
   float startAltitude = 3000;
   float startBearing = 0;
 
+  //Time to complete flying instruction
   float timeMargin = 0.65;
 
-  String currentInstruction, previousInstruction, currentCalculation;
+  String currentInstruction, previousInstruction, currentCalculation, currentSerieNumber;
 
   color textColor = color(0);
   int textSize = 40;
@@ -44,6 +58,7 @@ class Exercice{
 
   Exercice(float startAltitude, float startBearing, NumberInput numberInput){
     ih = new InstructionHandler(startAltitude, startBearing);
+    sh = new SerieHandler();
     calc = new Calculus();
 
     this.numberInput = numberInput;
@@ -62,38 +77,11 @@ class Exercice{
     timeSinceLastCalc += millis() - timeSincePaused;
     timeSinceLastAlt += millis() - timeSincePaused;
     timeSinceLastTurn += millis() - timeSincePaused;
+    timeSinceLastSerie += millis() - timeSincePaused;
   }
 
   void run(){
     if(started && !paused){
-
-      //Calculus
-      if(millis()-timeSinceLastCalc>calcInterval){
-        if(!calcActive){
-          calculationColor = defaultCalcColor;
-          currentCalculation = calc.getRandomCalculation();
-          calcActive = true;
-          calcInterval = defaultCalcInterval;
-        }else if(!resultActive){
-          if(calc.getResult() == numberInput.getInput()){
-            answer = correct;
-            calculationColor = correctColor;
-          }else{
-            answer = incorrect;
-            calculationColor = incorrectColor;
-          }
-
-          currentCalculation = currentCalculation+" = "+calc.getResult()+" "+answer;
-          calcInterval = defaultResultInterval;
-          resultActive = true;
-        }else{
-          calcInterval = int(random(calcDelayMin,calcDelayMax));
-          calcActive = false;
-          resultActive = false;
-          currentCalculation = "";
-        }
-        timeSinceLastCalc = millis();
-      }
 
       //Altitude change
       if(millis()-timeSinceLastAlt>altInterval){
@@ -137,9 +125,57 @@ class Exercice{
         }
         println("");
       }
+
+      //Calculus
+      if(millis()-timeSinceLastCalc>calcInterval){
+        if(sh.hasReachedEnd() && serieInterval - millis() - timeSinceLastSerie < defaultInterval) calcInterval += defaultInterval;
+        if(!calcActive){
+          calcActive = true;
+          calculationColor = defaultCalcColor;
+          currentCalculation = calc.getRandomCalculation();
+          calcInterval = defaultCalcInterval;
+        }else if(!resultActive){
+          if(calc.getResult() == numberInput.getInput()){
+            answer = correct;
+            calculationColor = correctColor;
+          }else{
+            answer = incorrect;
+            calculationColor = incorrectColor;
+          }
+
+          currentCalculation = currentCalculation+" = "+calc.getResult()+" "+answer;
+          calcInterval = defaultResultInterval;
+          resultActive = true;
+        }else{
+          calcActive = false;
+          calcInterval = int(random(calcDelayMin,calcDelayMax));
+          resultActive = false;
+          currentCalculation = "";
+        }
+        timeSinceLastCalc = millis();
+      }
+
+      //Serie
+      if(millis()-timeSinceLastSerie>serieInterval){
+        if(!serieActive){
+          if(!sh.hasReachedEnd()) sh.setNext();
+          //else if(sh.hasReachedEnd() && calcInterval - millis() - timeSinceLastCalc < defaultInterval) serieInterval += defaultInterval;
+          serieActive = true;
+          timeSinceLastSerie = millis();
+          serieInterval = defaultSerieInterval;
+        }else{
+          if(!sh.hasReachedEnd()){
+            serieActive = false;
+            serieInterval = int(random(serieDelayMin, serieDelayMax));
+          }else{
+            serieResultActive = true;
+          }
+        }
+      }
     }
     displayCurrentInstruction();
     displayCurrentCalculation();
+    if(serieActive) displayCurrentSerieNumber();
   }
 
   void displayCurrentInstruction(){
@@ -156,10 +192,37 @@ class Exercice{
     text(currentCalculation,width/2,height*0.18);
   }
 
+  void displayCurrentSerieNumber(){
+    textSize(50);
+    textAlign(CENTER,CENTER);
+    fill(0);
+    if(!sh.hasReachedEnd()){
+      fill(255);
+      rectMode(CENTER);
+      stroke(0);
+      strokeWeight(4);
+      rect(width*0.85,height*0.18,75,75);
+      fill(0);
+      text(sh.getCurrent(),width*0.85,height*0.18-4);
+    }else
+      if(!serieResultActive) text("SERIE ?",width*0.85,height*0.18-4);
+      else{
+        int serie = sh.getSerie();
+        if(numberInput.getInput() == serie){
+          fill(correctColor);
+          text("CORRECT",width*0.85,height*0.18-4);
+        }else{
+          fill(incorrectColor);
+          text("INCORRECT",width*0.85,height*0.18-4);
+        }
+      }
+  }
+
   void start(){
     altInterval = 0;
-    turnInterval = int(random(25000,30000))/speedup;
+    turnInterval = int(random(turnDelayMin,turnDelayMax))/speedup;
     calcInterval = int(random(calcDelayMin,calcDelayMax));
+    serieInterval = int(random(serieDelayMin, serieDelayMax));
     started = true;
     paused = false;
   }

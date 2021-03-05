@@ -40,9 +40,8 @@ class NumberInput{
 
   void validateInput(){
     String temp = "";
-    for(String num: currentInput){
-      temp+=num;
-    }
+    for(String num: currentInput) temp+=num;
+    
     input =  Integer.parseInt(temp);
 
     println("The input is "+input);
