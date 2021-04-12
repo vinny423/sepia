@@ -4,7 +4,7 @@ class Exercice{
   Calculus calc;
   NumberInput numberInput;
 
-  float speedup = 3;
+  float speedup = 1;
 
   float timeSinceLastAlt, timeSinceLastTurn, timeSinceLastCalc, timeSinceLastSerie, timeSincePaused;
   float altInterval, turnInterval, calcInterval, serieInterval;
@@ -17,10 +17,10 @@ class Exercice{
   float turnDelayMax = 30000/speedup;
 
   //Calculus
-  float defaultCalcInterval = 20000/speedup;
+  //float defaultCalcInterval = 20000/speedup;
   float defaultResultInterval = 5000/speedup;
-  float calcDelayMin = 25000/speedup;
-  float calcDelayMax = 50000/speedup;
+  float calcDelayMin = 35000/speedup;
+  float calcDelayMax = 75000/speedup;
   boolean calcActive = false;
   boolean resultActive = false;
 
@@ -28,9 +28,10 @@ class Exercice{
   float defaultSerieInterval = 15000/speedup;
   float serieDelayMin = 25000/speedup;
   float serieDelayMax = 40000/speedup;
-
   boolean serieActive = false;
   boolean serieResultActive = false;
+
+  float inputDelay = 25000/speedup;
 
   float startAltitude = 3000;
   float startBearing = 0;
@@ -127,13 +128,13 @@ class Exercice{
       }
 
       //Calculus
-      if(millis()-timeSinceLastCalc>calcInterval){
-        if(sh.hasReachedEnd() && serieInterval - millis() - timeSinceLastSerie < defaultInterval) calcInterval += defaultInterval;
+      if(millis()-timeSinceLastCalc>calcInterval && !serieActive){
+        //if(sh.hasReachedEnd() && serieInterval - millis() - timeSinceLastSerie < defaultInterval) calcInterval += defaultInterval;
         if(!calcActive){
           calcActive = true;
           calculationColor = defaultCalcColor;
           currentCalculation = calc.getRandomCalculation();
-          calcInterval = defaultCalcInterval;
+          calcInterval = inputDelay;
         }else if(!resultActive){
           if(calc.getResult() == numberInput.getInput()){
             answer = correct;
@@ -156,8 +157,8 @@ class Exercice{
       }
 
       //Serie
-      if(millis()-timeSinceLastSerie>serieInterval){
-        if(!serieActive){
+      if(millis()-timeSinceLastSerie>serieInterval && !calcActive){
+        if(!serieActive && !serieResultActive){
           if(!sh.hasReachedEnd()) sh.setNext();
           //else if(sh.hasReachedEnd() && calcInterval - millis() - timeSinceLastCalc < defaultInterval) serieInterval += defaultInterval;
           serieActive = true;
@@ -167,8 +168,15 @@ class Exercice{
           if(!sh.hasReachedEnd()){
             serieActive = false;
             serieInterval = int(random(serieDelayMin, serieDelayMax));
+          }else if(serieResultActive){
+            serieResultActive = false;
+            serieActive = false;
+            sh = new SerieHandler();
+            serieInterval = int(random(serieDelayMin, serieDelayMax));
           }else{
             serieResultActive = true;
+            timeSinceLastSerie = millis();
+            serieInterval = defaultSerieInterval;
           }
         }
       }

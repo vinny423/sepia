@@ -11,7 +11,7 @@ class SerieHandler{
 
   void generateNew(){
     for(int i=0; i<serieSize; i++) serie[i] = String.valueOf(int(random(9)));
-    currentPointer = 3;
+    currentPointer = -1;
   }
 
   String getCurrent(){
