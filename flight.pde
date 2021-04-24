@@ -2,6 +2,11 @@
 float bankDeadzone = 0.9;
 float pitchDeadzone = 0.05;
 
+//Control mode
+boolean throttleJoystick = false;
+float keyboardThrottleValue = 0;
+float keyboardThrottleStep = 0.01;
+
 ////Environment parameters
 float airDensity = 1.225; //kg/m^3
 
@@ -83,8 +88,17 @@ void resetFlight(){
 void flight() {
   if(paused) return;
   if(!rpmLocked){
-    rpm = map(throttle, -1, 1, idleRpm, maxRpm);
-    power = map(throttle, -1, 1, idlePower, maxPower);
+    if(throttleJoystick) rpm = map(throttle, -1, 1, idleRpm, maxRpm);
+    else if(keyPressed){
+      if(key == 'e'){
+        keyboardThrottleValue += keyboardThrottleStep;
+        if(keyboardThrottleValue>1) keyboardThrottleValue = 1;
+        if(keyboardThrottleValue<-1) keyboardThrottleValue = -1;
+      }else if(key == 'd')keyboardThrottleValue -= keyboardThrottleStep;
+      else keyboardThrottleValue = keyboardThrottleValue;
+      rpm = map(keyboardThrottleValue, -1, 1, idleRpm, maxRpm);
+    }
+    power = map(rpm, idleRpm, maxRpm, idlePower, maxPower);
   }
 
   if(!rollLocked){

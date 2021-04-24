@@ -3,6 +3,7 @@ class Exercice{
   SerieHandler sh;
   Calculus calc;
   NumberInput numberInput;
+  ImageHandler imageHandler;
 
   float speedup = 1;
 
@@ -61,6 +62,7 @@ class Exercice{
     ih = new InstructionHandler(startAltitude, startBearing);
     sh = new SerieHandler();
     calc = new Calculus();
+    imageHandler = new ImageHandler();
 
     this.numberInput = numberInput;
     this.startAltitude = startAltitude;

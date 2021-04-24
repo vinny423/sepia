@@ -175,6 +175,7 @@ void keyPressed() {
     exercice.start();
     rpmLocked = pitchLocked = rollLocked = speedLocked = false;
   }
+
 }
 
 void validateValues() {

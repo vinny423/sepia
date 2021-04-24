@@ -1,4 +1,4 @@
 data
 build
-application.windows32
-application.windows64
+application.windows32/
+application.windows64/
