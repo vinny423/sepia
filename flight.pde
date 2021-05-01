@@ -7,6 +7,14 @@ boolean throttleJoystick = false;
 float keyboardThrottleValue = 0;
 float keyboardThrottleStep = 0.01;
 
+boolean rollJoystick = false;
+float keyboardRollValue = 0;
+float keyboardRollStep = 0.01;
+
+boolean pitchJoystick = false;
+float keyboardPitchValue = 0;
+float keyboardPitchStep = 0.01;
+
 ////Environment parameters
 float airDensity = 1.225; //kg/m^3
 
@@ -18,7 +26,7 @@ float maxSpeed = 190; //kts
 float minSpeed = 0; //kts
 
 float naturalPitch = 0.002;
-float naturalBank = 0.001;
+float naturalBank = 0.002;
 
 //Engine
 float maxRpm = 2700;
@@ -89,26 +97,26 @@ void flight() {
   if(paused) return;
   if(!rpmLocked){
     if(throttleJoystick) rpm = map(throttle, -1, 1, idleRpm, maxRpm);
-    else if(keyPressed){
-      if(key == 'e'){
-        keyboardThrottleValue += keyboardThrottleStep;
-        if(keyboardThrottleValue>1) keyboardThrottleValue = 1;
-        if(keyboardThrottleValue<-1) keyboardThrottleValue = -1;
-      }else if(key == 'd')keyboardThrottleValue -= keyboardThrottleStep;
-      else keyboardThrottleValue = keyboardThrottleValue;
-      rpm = map(keyboardThrottleValue, -1, 1, idleRpm, maxRpm);
-    }
+    else rpm = map(keyboardThrottleValue, -1, 1, idleRpm, maxRpm);
     power = map(rpm, idleRpm, maxRpm, idlePower, maxPower);
   }
 
   if(!rollLocked){
-    bank += map(x, -1, 1, maxRollRate, -maxRollRate);
+    if(rollJoystick) bank += map(x, -1, 1, maxRollRate, -maxRollRate);
+    else if(keyPressed){
+      if(keyCode == LEFT) bank += maxRollRate;
+      else if(keyCode == RIGHT) bank -= maxRollRate;
+    }
     if(bank<-bankDeadzone) bank -= bank*naturalBank;
     else if(bank>bankDeadzone) bank -= bank*naturalBank;
   }
 
   if(!pitchLocked){
-    pitch += map(y, -1, 1, -maxPitchRate, maxPitchRate);
+    if(pitchJoystick) pitch += map(y, -1, 1, -maxPitchRate, maxPitchRate);
+    else if(keyPressed){
+      if(keyCode == DOWN) pitch += maxPitchRate;
+      else if(keyCode == UP) bank -= maxPitchRate;
+    }
     if(pitch<-pitchDeadzone) pitch -= pitch*naturalPitch;
     else if(pitch>pitchDeadzone) pitch -= pitch*naturalPitch;
   }

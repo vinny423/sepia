@@ -6,10 +6,16 @@ import java.util.List;
 boolean debug = false;
 boolean started = false;
 boolean paused = false;
+boolean mouseOn = true;
 int fps = 60;
 boolean joystickSet = false;
 boolean joystickPreloaded = false;
 boolean leftMouseClicked = false;
+boolean keyActive = false;
+boolean rotacteurOddLocked = false;
+boolean rotacteurPairLocked = false;
+char previousKey;
+StringList pressedKeys;
 boolean mouseLocked = false;
 boolean rpmLocked, pitchLocked, rollLocked, speedLocked;
 
@@ -70,6 +76,8 @@ void setup() {
   joystickButton.setColor(color(#083471));
   joystickButton.setTextColor(color(255));
 
+  pressedKeys = new StringList();
+
   resetFlight();
 
   exercice = new Exercice(altitude,bearing, numberInput);
@@ -82,6 +90,12 @@ void draw() {
   background(220);
 
   if(joystickSet){
+
+    handleKeys();
+
+    println("Odd locked: ",rotacteurOddLocked);
+    println("Pair locked: ",rotacteurPairLocked);
+    println(pressedKeys,"\n");
 
     getUserInput();
     flight();
@@ -155,27 +169,86 @@ void unpause(){
 }
 
 void keyPressed() {
-  //Rotactors
-  if (key == 'z' && !paused) rotacteurOddSelection++;
-  else if (key == 'a') rotacteurOddSelection--;
-
-  if (key == 's' && !paused) rotacteurPairSelection++;
-  else if (key == 'q') rotacteurPairSelection--;
-
-  //Input
+  //Number input
   if (started && !paused && (Character.isDigit(key) || keyCode == 10 || keyCode == 8)) numberInput.handleInput();
 
-  //Main logic
+  //Sim main logic
   if(key == 'r') reset();
 
   if(key == 'p' && started) if(!paused) pause();
   else unpause();
+
+  /*if(key == 'm' && started) {println("Mouse toggle"); if(mouseOn) noCursor();
+  else cursor(ARROW);}*/
 
   if(key == ENTER && started == false){
     exercice.start();
     rpmLocked = pitchLocked = rollLocked = speedLocked = false;
   }
 
+  if(!keyActive || key != previousKey){
+    pressedKeys.append(str(key));
+    previousKey = key;
+    keyActive = true;
+  }
+}
+
+void keyReleased(){
+  for(int i=0; i<pressedKeys.size(); i++) if(pressedKeys.get(i).charAt(0) == key){
+    if('z' == pressedKeys.get(i).charAt(0) || 'a' == pressedKeys.get(i).charAt(0)) rotacteurOddLocked = false;
+    if('q' == pressedKeys.get(i).charAt(0) || 's' == pressedKeys.get(i).charAt(0)) rotacteurPairLocked = false;
+    pressedKeys.remove(i);
+    previousKey = ' ';
+  }
+
+  if(pressedKeys.size() == 0){
+    keyActive = false;
+  }
+}
+
+void handleKeys(){
+  //Throttle
+  if(started){
+    if(isPressed('e')){
+      keyboardThrottleValue += keyboardThrottleStep;
+      if(keyboardThrottleValue>1) keyboardThrottleValue = 1;
+    }else if(isPressed('d')){
+      keyboardThrottleValue -= keyboardThrottleStep;
+      if(keyboardThrottleValue<-1) keyboardThrottleValue = -1;
+    }
+
+    //Rotactors
+    if(!rotacteurOddLocked){
+      if (isPressed('z')){
+        rotacteurOddSelection++;
+        rotacteurOddLocked = true;
+      }
+      else if (isPressed('a')){
+        rotacteurOddSelection--;
+        rotacteurOddLocked = true;
+      }
+    }
+
+    if(!rotacteurPairLocked){
+      if (isPressed('s') && !paused){
+        rotacteurPairSelection++;
+        rotacteurPairLocked = true;
+      } else if (isPressed('q')){
+        rotacteurPairSelection--;
+        rotacteurPairLocked = true;
+      }
+    }
+  }
+}
+
+boolean isPressed(char k){
+  boolean result = false;
+  for(String listKey : pressedKeys)
+    if(k == listKey.charAt(0)){
+      result = true;
+      break;
+    }
+  return result;
 }
 
 void validateValues() {
