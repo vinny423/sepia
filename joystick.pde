@@ -62,6 +62,7 @@ void setupJoystick(){
   tolerance = new JSONObject();
   multiplier = new JSONObject();
   axis = new JSONObject();
+  stickList = append(stickList,keyboardName);
   for(int i=0; i<deviceList.size(); i++){
     if(control.getDevice(i).getTypeName() == "Stick") stickList = append(stickList,deviceList.get(i).toString());
   }
@@ -105,7 +106,7 @@ void checkValidStick(){
       sliderX = null;
     }
     stickDevice = control.getDevice(stickName);
-    if(stickDevice.getTypeName() == "Stick"){
+    if(stickDevice.getTypeName() == "Stick" || stickName == keyboardName){
       validStick = true;
     } else validStick = false;
   } catch(RuntimeException e){
@@ -115,14 +116,16 @@ void checkValidStick(){
 
 void checkValidThrottle(){
   try {
-    if(control.getDevice(throttleName) != throttleDevice){
+    if(throttleName == keyboardName || control.getDevice(throttleName) != throttleDevice){
       throttleAxesSet = false;
       sliderT = null;
     }
-    throttleDevice = control.getDevice(throttleName);
-    if(throttleDevice.getTypeName() == "Stick") validThrottle = true;
+    if(throttleName != keyboardName) throttleDevice = control.getDevice(throttleName);
+
+    if(throttleName == keyboardName || throttleDevice.getTypeName() == "Stick") validThrottle = true;
     else validThrottle = false;
   } catch(RuntimeException e){
+    //println("Invalid throttle, exception");
     validThrottle = false;
   }
 }
@@ -154,7 +157,7 @@ void displayJoystickConfig(){
   checkValidStick();
   checkValidThrottle();
 
-  if(validStick){
+  if(validStick && stickName != keyboardName){
     if(!stickAxesSet) setStickAxes();
 
     if(xAxisDropdown.getSelection() != xAxisDropdown.firstElement){
@@ -190,13 +193,21 @@ void displayJoystickConfig(){
 
     yAxisDropdown.display();
     xAxisDropdown.display();
+
+    pitchJoystick = true;
+    rollJoystick = true;
+  }else if(stickName == keyboardName){
+    //TODO Display keyboard throttle controls
+    pitchJoystick = false;
+    rollJoystick = false;
   }else{
     fill(0);
     textSize(textSize);
     text("Sélectionner un joystick valide",width/2,height/4);
   }
 
-  if(validThrottle){
+  if(validThrottle && throttleName != keyboardName){
+
     if(!throttleAxesSet) setThrottleAxes();
 
     if(tAxisDropdown.getSelection() != tAxisDropdown.firstElement){
@@ -217,6 +228,11 @@ void displayJoystickConfig(){
     }
 
     tAxisDropdown.display();
+
+    throttleJoystick = true;
+  }else if(throttleName == keyboardName){
+    //TODO Display keyboard pitch/roll controls
+    throttleJoystick = false;
   }else{
     fill(0);
     textSize(textSize);
@@ -239,7 +255,7 @@ void displayJoystickConfig(){
   text("Roulis",panelX*1.07,panelY*(yAlign)/6);
 
   validateButton.display();
-    if(validateButton.clicked) validate();
+  if(validateButton.clicked) validate();
 }
 
 void setStickAxes(){
@@ -307,42 +323,71 @@ void saveToFile(){
   data.setString(savedJoystick,stickName);
   data.setString(savedThrottle,throttleName);
 
-  data.setFloat(savedTolerance+"X",toleranceSliderX.getValue());
-  data.setFloat(savedTolerance+"Y",toleranceSliderY.getValue());
-  data.setFloat(savedTolerance+"T",toleranceSliderT.getValue());
+  if(stickName != keyboardName){
+    data.setString(savedAxis+"X",sliderX.getName());
+    data.setFloat(savedTolerance+"X",toleranceSliderX.getValue());
+    data.setInt(savedMultiplier+"X",xInverse);
 
-  data.setInt(savedMultiplier+"X",xInverse);
-  data.setInt(savedMultiplier+"Y",yInverse);
-  data.setInt(savedMultiplier+"T",tInverse);
+    data.setString(savedAxis+"Y",sliderY.getName());
+    data.setFloat(savedTolerance+"Y",toleranceSliderY.getValue());
+    data.setInt(savedMultiplier+"Y",yInverse);
+  }else{
+    data.setString(savedAxis+"X","");
+    data.setFloat(savedTolerance+"X",0);
+    data.setInt(savedMultiplier+"X",0);
 
-  data.setString(savedAxis+"X",sliderX.getName());
-  data.setString(savedAxis+"Y",sliderY.getName());
-  data.setString(savedAxis+"T",sliderT.getName());
+    data.setString(savedAxis+"Y","");
+    data.setFloat(savedTolerance+"Y",0);
+    data.setInt(savedMultiplier+"Y",0);
+  }
+  if(stickName != keyboardName){
+    data.setString(savedAxis+"T",sliderT.getName());
+    data.setInt(savedMultiplier+"T",tInverse);
+    data.setFloat(savedTolerance+"T",toleranceSliderT.getValue());
+  }else{
+    data.setString(savedAxis+"T","");
+    data.setInt(savedMultiplier+"T",0);
+    data.setFloat(savedTolerance+"T",0);
+  }
 
   saveJSONObject(data,saveFileName);
 }
 
 boolean loadFromFile(){
   data = loadJSONObject(saveFileName);
-
+  String loadedJoystick, loadedThrottle;
   try{
-    stickDevice = control.getDevice(data.getString(savedJoystick));
-    throttleDevice = control.getDevice(data.getString(savedThrottle));
+    loadedJoystick = data.getString(savedJoystick);
+    loadedThrottle = data.getString(savedThrottle);
+
+    if(!loadedJoystick.equals(keyboardName)) stickDevice = control.getDevice(data.getString(savedJoystick));
+    if(!loadedThrottle.equals(keyboardName)) throttleDevice = control.getDevice(data.getString(savedThrottle));
   } catch(RuntimeException e){
+    println("Exception ",e);
+    //println("Ca schie dans la colle");
     return false;
   }
 
-  sliderX = stickDevice.getSlider(data.getString(savedAxis+"X"));
-  sliderY = stickDevice.getSlider(data.getString(savedAxis+"Y"));
-  sliderT = throttleDevice.getSlider(data.getString(savedAxis+"T"));
+  if(!loadedJoystick.equals(keyboardName)){
+    sliderX = stickDevice.getSlider(data.getString(savedAxis+"X"));
+    sliderX.setTolerance(data.getFloat(savedTolerance+"X"));
+    sliderX.setMultiplier(data.getInt(savedMultiplier+"X"));
 
-  sliderX.setTolerance(data.getFloat(savedTolerance+"X"));
-  sliderY.setTolerance(data.getFloat(savedTolerance+"Y"));
-  sliderT.setTolerance(data.getFloat(savedTolerance+"T"));
+    sliderY = stickDevice.getSlider(data.getString(savedAxis+"Y"));
+    sliderY.setTolerance(data.getFloat(savedTolerance+"Y"));
+    sliderY.setMultiplier(data.getInt(savedMultiplier+"Y"));
+  }else{
+    pitchJoystick = false;
+    rollJoystick = false;
+  }
 
-  sliderX.setMultiplier(data.getInt(savedMultiplier+"X"));
-  sliderY.setMultiplier(data.getInt(savedMultiplier+"Y"));
-  sliderT.setMultiplier(data.getInt(savedMultiplier+"T"));
+  if(!loadedThrottle.equals(keyboardName)){
+    sliderT = throttleDevice.getSlider(data.getString(savedAxis+"T"));
+    sliderT.setTolerance(data.getFloat(savedTolerance+"T"));
+    sliderT.setMultiplier(data.getInt(savedMultiplier+"T"));
+  }else{
+    throttleJoystick = false;
+  }
 
   return true;
 }
@@ -366,9 +411,12 @@ void configureTAxis(){
 }
 
 void getUserInput(){
-  getXInput();
-  getYInput();
-  getTInput();
+  if(rollJoystick && pitchJoystick){
+    getXInput();
+    getYInput();
+  }
+
+  if(throttleJoystick) getTInput();
 }
 
 void getXInput(){
