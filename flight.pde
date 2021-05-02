@@ -103,20 +103,14 @@ void flight() {
 
   if(!rollLocked){
     if(rollJoystick) bank += map(x, -1, 1, maxRollRate, -maxRollRate);
-    else if(keyPressed){
-      if(keyCode == LEFT) bank += maxRollRate;
-      else if(keyCode == RIGHT) bank -= maxRollRate;
-    }
+    //Natural roll
     if(bank<-bankDeadzone) bank -= bank*naturalBank;
     else if(bank>bankDeadzone) bank -= bank*naturalBank;
   }
 
   if(!pitchLocked){
     if(pitchJoystick) pitch += map(y, -1, 1, -maxPitchRate, maxPitchRate);
-    else if(keyPressed){
-      if(keyCode == DOWN) pitch += maxPitchRate;
-      else if(keyCode == UP) bank -= maxPitchRate;
-    }
+    //Natural pitch
     if(pitch<-pitchDeadzone) pitch -= pitch*naturalPitch;
     else if(pitch>pitchDeadzone) pitch -= pitch*naturalPitch;
   }

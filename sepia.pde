@@ -169,32 +169,53 @@ void unpause(){
 }
 
 void keyPressed() {
+  char pressedKey = key;
+
   //Number input
-  if (started && !paused && (Character.isDigit(key) || keyCode == 10 || keyCode == 8)) numberInput.handleInput();
+  if (started && !paused && (Character.isDigit(pressedKey) || keyCode == 10 || keyCode == 8)) numberInput.handleInput();
 
   //Sim main logic
-  if(key == 'r') reset();
+  if(pressedKey == 'r') reset();
 
-  if(key == 'p' && started) if(!paused) pause();
+  if(pressedKey == 'p' && started) if(!paused) pause();
   else unpause();
 
   /*if(key == 'm' && started) {println("Mouse toggle"); if(mouseOn) noCursor();
   else cursor(ARROW);}*/
 
-  if(key == ENTER && started == false){
+  //Enter key for starting
+  if(pressedKey == ENTER && started == false){
     exercice.start();
     rpmLocked = pitchLocked = rollLocked = speedLocked = false;
   }
 
-  if(!keyActive || key != previousKey){
-    pressedKeys.append(str(key));
-    previousKey = key;
+  //Arrow keys
+  if(pressedKey == CODED){
+    if(keyCode == UP) pressedKey = 'o';
+    if(keyCode == DOWN) pressedKey = 'l';
+    if(keyCode == RIGHT) pressedKey = 'k';
+    if(keyCode == LEFT) pressedKey = 'm';
+  }
+
+  //Normal keys
+  if(!keyActive || pressedKey != previousKey && !isPressed(pressedKey)){
+    pressedKeys.append(str(pressedKey));
+    previousKey = pressedKey;
     keyActive = true;
   }
 }
 
 void keyReleased(){
-  for(int i=0; i<pressedKeys.size(); i++) if(pressedKeys.get(i).charAt(0) == key){
+  char releasedKey = key;
+
+  if(releasedKey == CODED){
+    if(keyCode == UP) releasedKey = 'o';
+    if(keyCode == DOWN) releasedKey = 'l';
+    if(keyCode == RIGHT) releasedKey = 'k';
+    if(keyCode == LEFT) releasedKey = 'm';
+  }
+
+  for(int i=0; i<pressedKeys.size(); i++) if(pressedKeys.get(i).charAt(0) == releasedKey){
     if('z' == pressedKeys.get(i).charAt(0) || 'a' == pressedKeys.get(i).charAt(0)) rotacteurOddLocked = false;
     if('q' == pressedKeys.get(i).charAt(0) || 's' == pressedKeys.get(i).charAt(0)) rotacteurPairLocked = false;
     pressedKeys.remove(i);
@@ -207,8 +228,16 @@ void keyReleased(){
 }
 
 void handleKeys(){
-  //Throttle
   if(started){
+    //Axes
+    //Pitch
+    if(isPressed('l')) pitch += maxPitchRate;
+    else if(isPressed('o')) pitch -= maxPitchRate;
+    //Roll
+    if(isPressed('m')) bank += maxRollRate;
+    else if(isPressed('k')) bank -= maxRollRate;
+
+    //Throttle
     if(isPressed('e')){
       keyboardThrottleValue += keyboardThrottleStep;
       if(keyboardThrottleValue>1) keyboardThrottleValue = 1;
